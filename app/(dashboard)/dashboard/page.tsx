@@ -18,30 +18,86 @@ export default async function DashboardPage() {
     }
 
     // Fetch user profile
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single()
 
-    // Debug: Log profile data to server console
-    console.log('Dashboard - User ID:', user.id)
-    console.log('Dashboard - Profile:', profile)
-    console.log('Dashboard - Profile Error:', profileError)
-    console.log('Dashboard - Role:', profile?.role)
-
     // Use profile data or fallback to user email
     const userName = profile?.full_name || user.email?.split('@')[0] || 'User'
     const isAdmin = profile?.role === 'admin'
-    console.log('Dashboard - isAdmin:', isAdmin)
+
+    if (isAdmin) {
+        return (
+            <PageContainer>
+                <AdminDashboard userName={userName} />
+            </PageContainer>
+        )
+    }
+
+    // Fetch employee-specific stats
+    const today = new Date()
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+
+    // Tasks assigned to this employee
+    const { data: myTasks } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('assigned_to', user.id)
+        .eq('is_archived', false)
+
+    // Count tasks completed this month
+    const { count: completedThisMonth } = await supabase
+        .from('tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('assigned_to', user.id)
+        .eq('status', 'done')
+        .gte('updated_at', startOfMonth.toISOString())
+
+    // Count tasks in review
+    const { count: pendingReviews } = await supabase
+        .from('tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('assigned_to', user.id)
+        .eq('status', 'review')
+
+    // Count tasks due today
+    const { count: tasksDueToday } = await supabase
+        .from('tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('assigned_to', user.id)
+        .neq('status', 'done')
+        .gte('due_date', startOfDay.toISOString())
+        .lte('due_date', endOfDay.toISOString())
+
+    // Get high priority tasks (high/urgent, not done)
+    const { data: highPriorityTasks } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('assigned_to', user.id)
+        .eq('is_archived', false)
+        .neq('status', 'done')
+        .in('priority', ['high', 'urgent'])
+        .order('due_date', { ascending: true })
+        .limit(5)
+
+    const stats = {
+        tasksCompletedThisMonth: completedThisMonth || 0,
+        pendingReviews: pendingReviews || 0,
+        tasksDueToday: tasksDueToday || 0,
+        totalTasks: myTasks?.length || 0,
+    }
 
     return (
         <PageContainer>
-            {isAdmin ? (
-                <AdminDashboard userName={userName} />
-            ) : (
-                <EmployeeDashboard userName={userName} />
-            )}
+            <EmployeeDashboard
+                userName={userName}
+                stats={stats}
+                highPriorityTasks={highPriorityTasks || []}
+            />
         </PageContainer>
     )
 }

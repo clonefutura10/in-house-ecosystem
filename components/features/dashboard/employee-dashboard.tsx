@@ -1,80 +1,53 @@
 'use client'
 
 import Link from 'next/link'
+import { format, isPast, isToday } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { PlusCircle } from 'lucide-react'
+import { PlusCircle, CheckCircle, Clock, ListTodo, AlertCircle } from 'lucide-react'
+import type { Database } from '@/types/supabase'
+
+type Task = Database['public']['Tables']['tasks']['Row']
+type TaskStatus = Database['public']['Enums']['task_status']
+
+interface EmployeeStats {
+    tasksCompletedThisMonth: number
+    pendingReviews: number
+    tasksDueToday: number
+    totalTasks: number
+}
 
 interface EmployeeDashboardProps {
     userName: string
-}
-
-type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done' | 'blocked'
-
-interface Task {
-    id: string
-    title: string
-    dueDate: string
-    status: TaskStatus
-    isOverdue: boolean
-}
-
-// Mock data for demo - in production, this would come from the database
-const highPriorityTasks: Task[] = [
-    {
-        id: '1',
-        title: 'Finalize Q4 Marketing Report',
-        dueDate: 'Nov 15, 2023',
-        status: 'in_progress',
-        isOverdue: true,
-    },
-    {
-        id: '2',
-        title: 'Review New UX Designs',
-        dueDate: 'Nov 22, 2023',
-        status: 'todo',
-        isOverdue: false,
-    },
-    {
-        id: '3',
-        title: 'Prepare Presentation for Client Meeting',
-        dueDate: 'Nov 25, 2023',
-        status: 'in_progress',
-        isOverdue: false,
-    },
-]
-
-const stats = {
-    tasksCompletedThisMonth: 28,
-    pendingReviews: 4,
-    tasksDueToday: 5,
+    stats: EmployeeStats
+    highPriorityTasks: Task[]
 }
 
 function getStatusBadge(status: TaskStatus) {
     const variants: Record<TaskStatus, { label: string; className: string }> = {
         todo: {
             label: 'Not Started',
-            className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+            className: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
         },
         in_progress: {
             label: 'In Progress',
-            className: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+            className: 'bg-slate-200 text-slate-800 dark:bg-slate-600 dark:text-slate-200',
         },
         review: {
             label: 'In Review',
-            className: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+            className: 'bg-[#1387ec]/10 text-[#1387ec] dark:bg-[#1387ec]/20',
         },
         done: {
             label: 'Completed',
-            className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+            className: 'bg-slate-900 text-white dark:bg-slate-200 dark:text-slate-900',
         },
         blocked: {
             label: 'Blocked',
-            className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+            className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
         },
     }
 
-    const { label, className } = variants[status]
+    const { label, className } = variants[status] || variants.todo
     return (
         <Badge variant="secondary" className={className}>
             {label}
@@ -82,7 +55,18 @@ function getStatusBadge(status: TaskStatus) {
     )
 }
 
-export function EmployeeDashboard({ userName }: EmployeeDashboardProps) {
+function formatDueDate(dueDate: string | null) {
+    if (!dueDate) return '—'
+    const date = new Date(dueDate)
+    return format(date, 'MMM d, yyyy')
+}
+
+function isOverdue(dueDate: string | null, status: TaskStatus | null) {
+    if (!dueDate || status === 'done') return false
+    return isPast(new Date(dueDate)) && !isToday(new Date(dueDate))
+}
+
+export function EmployeeDashboard({ userName, stats, highPriorityTasks }: EmployeeDashboardProps) {
     const firstName = userName.split(' ')[0]
 
     return (
@@ -109,85 +93,185 @@ export function EmployeeDashboard({ userName }: EmployeeDashboardProps) {
                     My Work Dashboard
                 </h1>
                 <p className="text-slate-600 dark:text-slate-400">
-                    Hello, {firstName}. You have{' '}
-                    <span className="font-semibold text-[#1387ec]">
-                        {stats.tasksDueToday} tasks
-                    </span>{' '}
-                    due today.
+                    Hello, {firstName}.{' '}
+                    {stats.tasksDueToday > 0 ? (
+                        <>
+                            You have{' '}
+                            <span className="font-semibold text-[#1387ec]">
+                                {stats.tasksDueToday} {stats.tasksDueToday === 1 ? 'task' : 'tasks'}
+                            </span>{' '}
+                            due today.
+                        </>
+                    ) : (
+                        'No tasks due today. Keep up the great work!'
+                    )}
                 </p>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                <CheckCircle className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                    {stats.tasksCompletedThisMonth}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Completed This Month</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                <Clock className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                    {stats.pendingReviews}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Pending Reviews</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                <AlertCircle className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                    {stats.tasksDueToday}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Due Today</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                <ListTodo className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                    {stats.totalTasks}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Total Active Tasks</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column - Tasks */}
-                <div className="lg:col-span-2 flex flex-col gap-8">
+                <div className="lg:col-span-2 flex flex-col gap-6">
                     {/* High Priority Tasks */}
                     <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                         <CardHeader className="border-b border-slate-200 dark:border-slate-800">
                             <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white">
-                                High Priority
+                                High Priority Tasks
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0">
-                            <div className="divide-y divide-slate-200 dark:divide-slate-800">
-                                {highPriorityTasks.map((task) => (
-                                    <div
-                                        key={task.id}
-                                        className="grid grid-cols-3 gap-4 p-4 items-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
-                                    >
-                                        <p className="font-medium text-slate-800 dark:text-slate-200 col-span-2 md:col-span-1">
-                                            {task.title}
-                                        </p>
-                                        <p
-                                            className={`font-medium text-sm ${task.isOverdue
-                                                    ? 'text-red-500'
-                                                    : 'text-slate-600 dark:text-slate-400'
-                                                }`}
+                            {highPriorityTasks.length === 0 ? (
+                                <div className="p-8 text-center text-slate-500">
+                                    <CheckCircle className="h-12 w-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+                                    <p className="font-medium">All caught up!</p>
+                                    <p className="text-sm">No high priority tasks pending.</p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-slate-200 dark:divide-slate-800">
+                                    {highPriorityTasks.map((task) => (
+                                        <Link
+                                            key={task.id}
+                                            href="/tasks"
+                                            className="grid grid-cols-3 gap-4 p-4 items-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                                         >
-                                            {task.dueDate}
-                                        </p>
-                                        <div className="text-right">{getStatusBadge(task.status)}</div>
-                                    </div>
-                                ))}
-                            </div>
+                                            <p className="font-medium text-slate-800 dark:text-slate-200 col-span-2 md:col-span-1">
+                                                {task.title}
+                                            </p>
+                                            <p
+                                                className={`font-medium text-sm ${isOverdue(task.due_date, task.status)
+                                                        ? 'text-red-500'
+                                                        : 'text-slate-600 dark:text-slate-400'
+                                                    }`}
+                                            >
+                                                {formatDueDate(task.due_date)}
+                                                {isOverdue(task.due_date, task.status) && (
+                                                    <span className="ml-1 text-xs">(Overdue)</span>
+                                                )}
+                                            </p>
+                                            <div className="text-right">
+                                                {task.status && getStatusBadge(task.status)}
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
 
-                    {/* Create New Task Button */}
+                    {/* View All Tasks Button */}
                     <Link
-                        href="/tasks/new"
-                        className="flex items-center justify-center gap-3 p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                        href="/tasks"
+                        className="flex items-center justify-center gap-3 p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
                     >
-                        <PlusCircle className="h-8 w-8 text-[#1387ec]" />
+                        <PlusCircle className="h-8 w-8 text-[#1387ec] group-hover:scale-110 transition-transform" />
                         <span className="text-lg font-semibold text-[#1387ec]">
-                            Create New Task
+                            View All Tasks
                         </span>
                     </Link>
                 </div>
 
-                {/* Right Column - Stats */}
-                <div className="flex flex-col gap-8">
-                    {/* Tasks Completed This Month */}
-                    <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                {/* Right Column - Quick Stats Summary */}
+                <div className="flex flex-col gap-6">
+                    <Card className="bg-slate-900 dark:bg-slate-800 border-0">
                         <CardContent className="p-6">
-                            <h3 className="text-base font-medium text-slate-600 dark:text-slate-400 mb-2">
-                                My Tasks Completed This Month
+                            <h3 className="text-slate-400 text-sm font-medium mb-4">
+                                This Month&apos;s Progress
                             </h3>
-                            <p className="text-4xl font-bold text-slate-900 dark:text-white">
+                            <p className="text-5xl font-bold text-white mb-2">
                                 {stats.tasksCompletedThisMonth}
+                            </p>
+                            <p className="text-slate-400 text-sm">
+                                Tasks completed
                             </p>
                         </CardContent>
                     </Card>
 
-                    {/* Pending Reviews */}
                     <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                         <CardContent className="p-6">
-                            <h3 className="text-base font-medium text-slate-600 dark:text-slate-400 mb-2">
-                                Pending Reviews
+                            <h3 className="text-base font-medium text-slate-600 dark:text-slate-400 mb-4">
+                                Task Status Overview
                             </h3>
-                            <p className="text-4xl font-bold text-slate-900 dark:text-white">
-                                {stats.pendingReviews}
-                            </p>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-slate-600 dark:text-slate-400">Active Tasks</span>
+                                    <span className="font-semibold text-slate-900 dark:text-white">{stats.totalTasks}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-slate-600 dark:text-slate-400">In Review</span>
+                                    <span className="font-semibold text-slate-900 dark:text-white">{stats.pendingReviews}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-slate-600 dark:text-slate-400">Due Today</span>
+                                    <span className="font-semibold text-slate-900 dark:text-white">{stats.tasksDueToday}</span>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
