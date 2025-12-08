@@ -22,14 +22,16 @@ interface NavItem {
     adminOnly?: boolean
 }
 
-const navItems: NavItem[] = [
-    { title: 'Dashboard', href: '/dashboard', icon: Home },
-    { title: 'My Tasks', href: '/tasks', icon: CheckCircle },
-    { title: 'Team', href: '/team', icon: Users, adminOnly: true },
-    { title: 'Performance', href: '/performance', icon: BarChart3, adminOnly: true },
-    { title: 'Reminders', href: '/reminders', icon: Bell },
-    { title: 'Settings', href: '/settings', icon: Settings },
-]
+function getNavItems(isAdmin: boolean): NavItem[] {
+    return [
+        { title: 'Dashboard', href: '/dashboard', icon: Home },
+        { title: isAdmin ? 'Tasks' : 'My Tasks', href: '/tasks', icon: CheckCircle },
+        { title: 'Team', href: '/team', icon: Users, adminOnly: true },
+        { title: 'Performance', href: '/performance', icon: BarChart3, adminOnly: true },
+        { title: 'Reminders', href: '/reminders', icon: Bell },
+        { title: 'Settings', href: '/settings', icon: Settings },
+    ]
+}
 
 interface AppSidebarProps {
     user: {
@@ -44,9 +46,12 @@ interface AppSidebarProps {
 export function AppSidebar({ user, onLogout }: AppSidebarProps) {
     const pathname = usePathname()
 
+    const isAdmin = user.role === 'admin'
+    const navItems = getNavItems(isAdmin)
+
     // Filter nav items based on role
     const visibleNavItems = navItems.filter(
-        (item) => !item.adminOnly || user.role === 'admin'
+        (item) => !item.adminOnly || isAdmin
     )
 
     const getInitials = (name: string) => {

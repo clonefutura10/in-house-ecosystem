@@ -28,19 +28,89 @@ export default async function DashboardPage() {
     const userName = profile?.full_name || user.email?.split('@')[0] || 'User'
     const isAdmin = profile?.role === 'admin'
 
-    if (isAdmin) {
-        return (
-            <PageContainer>
-                <AdminDashboard userName={userName} />
-            </PageContainer>
-        )
-    }
-
-    // Fetch employee-specific stats
+    // Common date calculations
     const today = new Date()
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
     const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+
+    if (isAdmin) {
+        // Admin Dashboard Stats
+
+        // Count total employees
+        const { count: totalEmployees } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('role', 'employee')
+            .eq('status', 'active')
+
+        // Count all active tasks
+        const { count: activeTasks } = await supabase
+            .from('tasks')
+            .select('*', { count: 'exact', head: true })
+            .eq('is_archived', false)
+            .neq('status', 'done')
+
+        // Count tasks in review (pending approvals)
+        const { count: pendingReviews } = await supabase
+            .from('tasks')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'review')
+            .eq('is_archived', false)
+
+        // Count tasks due in next 7 days
+        const { count: upcomingDeadlines } = await supabase
+            .from('tasks')
+            .select('*', { count: 'exact', head: true })
+            .eq('is_archived', false)
+            .neq('status', 'done')
+            .gte('due_date', startOfDay.toISOString())
+            .lte('due_date', nextWeek.toISOString())
+
+        // Get recent task activity (recently updated tasks)
+        const { data: recentTasks } = await supabase
+            .from('tasks')
+            .select(`
+                *,
+                assignee:profiles!tasks_assigned_to_fkey(id, full_name, avatar_url)
+            `)
+            .order('updated_at', { ascending: false })
+            .limit(5)
+
+        // Calculate completion rate this month
+        const { count: completedThisMonth } = await supabase
+            .from('tasks')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'done')
+            .gte('updated_at', startOfMonth.toISOString())
+
+        const { count: totalTasksThisMonth } = await supabase
+            .from('tasks')
+            .select('*', { count: 'exact', head: true })
+            .gte('created_at', startOfMonth.toISOString())
+
+        const adminStats = {
+            totalEmployees: totalEmployees || 0,
+            activeTasks: activeTasks || 0,
+            pendingReviews: pendingReviews || 0,
+            upcomingDeadlines: upcomingDeadlines || 0,
+            completedThisMonth: completedThisMonth || 0,
+            totalTasksThisMonth: totalTasksThisMonth || 0,
+        }
+
+        return (
+            <PageContainer>
+                <AdminDashboard
+                    userName={userName}
+                    stats={adminStats}
+                    recentActivity={recentTasks || []}
+                />
+            </PageContainer>
+        )
+    }
+
+    // Employee Dashboard Stats
 
     // Tasks assigned to this employee
     const { data: myTasks } = await supabase
@@ -84,7 +154,7 @@ export default async function DashboardPage() {
         .order('due_date', { ascending: true })
         .limit(5)
 
-    const stats = {
+    const employeeStats = {
         tasksCompletedThisMonth: completedThisMonth || 0,
         pendingReviews: pendingReviews || 0,
         tasksDueToday: tasksDueToday || 0,
@@ -95,7 +165,7 @@ export default async function DashboardPage() {
         <PageContainer>
             <EmployeeDashboard
                 userName={userName}
-                stats={stats}
+                stats={employeeStats}
                 highPriorityTasks={highPriorityTasks || []}
             />
         </PageContainer>
