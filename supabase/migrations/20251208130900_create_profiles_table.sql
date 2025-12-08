@@ -54,17 +54,21 @@ create policy "Users can update their own limited profile fields"
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, email, full_name, role)
+  insert into public.profiles (id, email, full_name, department, job_title, role, status)
   values (
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'full_name', new.email),
-    'employee' -- Default role
+    new.raw_user_meta_data->>'department',
+    new.raw_user_meta_data->>'job_title',
+    'employee',
+    'active'
   );
   return new;
 end;
 $$ language plpgsql security definer;
 
+-- Recreate trigger
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
