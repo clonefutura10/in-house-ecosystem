@@ -14,4 +14,4 @@ export * from './table'
 export * from './dropdown-menu'
 export * from './sheet'
 export * from './textarea'
-
+export * from './switch'
