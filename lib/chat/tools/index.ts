@@ -13,6 +13,7 @@ import {
   createListEmployeesTool,
   createDeleteTaskTool,
   createUpdateTaskTool,
+  createSearchTaskByTitleTool,
 } from './admin-tools'
 
 type SupabaseClientType = SupabaseClient<Database>
@@ -43,6 +44,7 @@ export function getToolsForRole(
     createListEmployeesTool(supabase, userId),
     createDeleteTaskTool(supabase, userId),
     createUpdateTaskTool(supabase, userId),
+    createSearchTaskByTitleTool(supabase, userId),
   ]
 
   return adminTools

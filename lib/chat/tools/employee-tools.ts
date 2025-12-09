@@ -11,10 +11,31 @@ import {
 
 type SupabaseClientType = SupabaseClient<Database>
 
+// Helper to get date bounds
+function getDateBounds(filter: string): { start: Date; end: Date } | null {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  
+  switch (filter) {
+    case 'today':
+      const tomorrow = new Date(today)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      return { start: today, end: tomorrow }
+    case 'this_week':
+      const endOfWeek = new Date(today)
+      endOfWeek.setDate(endOfWeek.getDate() + (7 - today.getDay()))
+      return { start: today, end: endOfWeek }
+    case 'overdue':
+      return { start: new Date(0), end: today }
+    default:
+      return null
+  }
+}
+
 // List tasks assigned to current user
 export function createListMyTasksTool(supabase: SupabaseClientType, userId: string) {
   return tool(
-    async ({ status, priority }) => {
+    async ({ status, priority, dueWithin }) => {
       let query = supabase
         .from('tasks')
         .select('id, title, status, priority, due_date, created_at')
@@ -28,15 +49,33 @@ export function createListMyTasksTool(supabase: SupabaseClientType, userId: stri
       if (priority) {
         query = query.eq('priority', priority)
       }
+      
+      // Apply date filter
+      if (dueWithin) {
+        if (dueWithin === 'no_date') {
+          query = query.is('due_date', null)
+        } else {
+          const bounds = getDateBounds(dueWithin)
+          if (bounds) {
+            query = query.gte('due_date', bounds.start.toISOString())
+              .lt('due_date', bounds.end.toISOString())
+          }
+        }
+      }
 
       const { data: tasks, error } = await query.limit(20)
 
       if (error) {
+        console.error('[listMyTasks] Error:', error)
         return `I had trouble getting your tasks. Please try again.`
       }
 
       if (!tasks || tasks.length === 0) {
-        return `You don't have any ${status ? status.replace('_', ' ') + ' ' : ''}tasks right now.`
+        const filterDesc = dueWithin === 'this_week' ? 'due this week' : 
+                          dueWithin === 'today' ? 'due today' :
+                          dueWithin === 'overdue' ? 'overdue' :
+                          status ? `with status "${status.replace('_', ' ')}"` : ''
+        return `You don't have any tasks ${filterDesc}.`.trim()
       }
 
       const taskList = tasks
@@ -48,11 +87,15 @@ export function createListMyTasksTool(supabase: SupabaseClientType, userId: stri
         })
         .join('\n')
 
-      return `Here are your tasks:\n\n${taskList}`
+      const headerDesc = dueWithin === 'this_week' ? 'due this week' :
+                        dueWithin === 'today' ? 'due today' :
+                        dueWithin === 'overdue' ? 'overdue' : ''
+      
+      return `Here are your tasks${headerDesc ? ` ${headerDesc}` : ''}:\n\n${taskList}`
     },
     {
       name: 'listMyTasks',
-      description: 'List tasks assigned to you. Can filter by status or priority.',
+      description: 'List tasks assigned to you. Can filter by status, priority, or due date (today, this_week, overdue, no_date).',
       schema: listTasksInputSchema,
     }
   )

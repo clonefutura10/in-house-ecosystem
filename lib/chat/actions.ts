@@ -26,17 +26,17 @@ export async function executeApprovedAction(
   try {
     switch (action) {
       case 'createTask': {
-        const { error } = await supabase.from('tasks').insert({
+        const { data: newTask, error } = await supabase.from('tasks').insert({
           title: data.title as string,
           description: data.description as string | null,
           priority: data.priority as 'low' | 'medium' | 'high' | 'urgent',
           due_date: data.due_date as string | null,
           assigned_to: data.assigned_to as string | null,
           created_by: data.created_by as string,
-        })
+        }).select('id').single()
 
         if (error) throw error
-        return `Done! I've created the task "${data.title}".`
+        return `Done! I've created the task "${data.title}" (ID: ${newTask?.id}). You can refer to this task by its title.`
       }
 
       case 'updateTaskStatus': {

@@ -3,10 +3,12 @@ import { z } from 'zod'
 // Tool schemas
 export const taskStatusSchema = z.enum(['todo', 'in_progress', 'review', 'done', 'blocked'])
 export const taskPrioritySchema = z.enum(['low', 'medium', 'high', 'urgent'])
+export const dueDateFilterSchema = z.enum(['today', 'this_week', 'overdue', 'no_date'])
 
 export const listTasksInputSchema = z.object({
   status: taskStatusSchema.optional().describe('Filter by task status'),
   priority: taskPrioritySchema.optional().describe('Filter by priority'),
+  dueWithin: dueDateFilterSchema.optional().describe('Filter by due date: today, this_week, overdue, or no_date'),
 })
 
 export const getTaskDetailsInputSchema = z.object({
@@ -30,8 +32,8 @@ export const createTaskWithAssigneeSchema = createTaskInputSchema.extend({
 })
 
 export const assignTaskInputSchema = z.object({
-  taskId: z.string().describe('The ID of the task to assign'),
-  assignTo: z.string().describe('The user ID to assign the task to'),
+  taskIdentifier: z.string().describe('The task title, name, or ID to search for'),
+  assignToName: z.string().describe('The name or email of the employee to assign the task to'),
 })
 
 export const listEmployeesInputSchema = z.object({
@@ -48,6 +50,10 @@ export const updateTaskInputSchema = z.object({
   description: z.string().optional().describe('New description'),
   priority: taskPrioritySchema.optional().describe('New priority'),
   dueDate: z.string().optional().describe('New due date'),
+})
+
+export const searchTaskByTitleSchema = z.object({
+  searchTerm: z.string().describe('Part of the task title to search for'),
 })
 
 // Types

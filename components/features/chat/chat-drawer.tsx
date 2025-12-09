@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { X, Loader2, RotateCcw, AlertCircle } from 'lucide-react'
 import { useChatStore } from '@/hooks/use-chat-store'
 import { MessageBubble } from './message-bubble'
@@ -22,11 +22,41 @@ export function ChatDrawer() {
     } = useChatStore()
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const messagesContainerRef = useRef<HTMLDivElement>(null)
+    const [isAnimating, setIsAnimating] = useState(false)
+    const [shouldRender, setShouldRender] = useState(false)
 
-    // Auto-scroll to bottom when new messages arrive
+    // Handle open/close with animation
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages, pendingApproval])
+        if (isOpen) {
+            setShouldRender(true)
+            // Small delay to ensure render before animation
+            requestAnimationFrame(() => {
+                setIsAnimating(true)
+            })
+        } else if (shouldRender) {
+            setIsAnimating(false)
+            // Wait for animation to complete before unmounting
+            const timer = setTimeout(() => {
+                setShouldRender(false)
+            }, 300) // Match animation duration
+            return () => clearTimeout(timer)
+        }
+    }, [isOpen, shouldRender])
+
+    // Scroll to bottom when messages change or drawer opens
+    useEffect(() => {
+        if (isOpen && messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+        }
+    }, [messages, pendingApproval, isOpen])
+
+    // Scroll to bottom immediately when drawer first opens
+    useEffect(() => {
+        if (isOpen && messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+        }
+    }, [isOpen])
 
     // Handle escape key
     useEffect(() => {
@@ -39,13 +69,16 @@ export function ChatDrawer() {
         return () => window.removeEventListener('keydown', handleEscape)
     }, [isOpen, close])
 
-    if (!isOpen) return null
+    if (!shouldRender) return null
 
     return (
         <>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40 transition-opacity"
+                className={cn(
+                    'fixed inset-0 bg-black/20 dark:bg-black/40 z-40 transition-opacity duration-300',
+                    isAnimating ? 'opacity-100' : 'opacity-0'
+                )}
                 onClick={close}
                 aria-hidden="true"
             />
@@ -53,8 +86,8 @@ export function ChatDrawer() {
             {/* Drawer */}
             <aside
                 className={cn(
-                    'fixed top-0 right-0 h-full w-[440px] max-w-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl z-50',
-                    'animate-in slide-in-from-right duration-300'
+                    'fixed top-0 right-0 h-full w-[440px] max-w-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl z-50 transition-transform duration-300 ease-out',
+                    isAnimating ? 'translate-x-0' : 'translate-x-full'
                 )}
                 role="dialog"
                 aria-label="AI Assistant"
@@ -84,7 +117,10 @@ export function ChatDrawer() {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                <div
+                    ref={messagesContainerRef}
+                    className="flex-1 p-4 space-y-4 overflow-y-auto"
+                >
                     {/* Welcome message */}
                     {messages.length === 0 && !isLoading && (
                         <div className="flex justify-start">
@@ -105,8 +141,8 @@ export function ChatDrawer() {
                         />
                     ))}
 
-                    {/* Pending approval */}
-                    {pendingApproval && <ApprovalButtons action={pendingApproval} />}
+                    {/* Pending approval - show buttons under the last message */}
+                    {pendingApproval && <ApprovalButtons />}
 
                     {/* Loading indicator */}
                     {isLoading && !pendingApproval && (
