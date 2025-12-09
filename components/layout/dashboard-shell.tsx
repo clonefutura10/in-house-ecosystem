@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AppSidebar } from './app-sidebar'
+import { ChatFAB, ChatDrawer } from '@/components/features/chat'
 
 interface DashboardShellProps {
     children: React.ReactNode
@@ -29,6 +30,8 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
         <div className="flex h-screen bg-[#f6f7f8] dark:bg-[#101a22]">
             <AppSidebar user={user} onLogout={handleLogout} />
             <div className="flex-1 overflow-y-auto">{children}</div>
+            <ChatFAB />
+            <ChatDrawer />
         </div>
     )
 }
