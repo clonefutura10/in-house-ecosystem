@@ -32,8 +32,26 @@ export default async function SettingsPage() {
     const { data: automationConfigs } = await supabase
         .from('automation_configs')
         .select(`
-            *,
-            template:reminder_templates(*)
+            id,
+            name,
+            trigger_cron,
+            reminder_type,
+            template_id,
+            is_active,
+            updated_at,
+            cron_job_name,
+            cron_command,
+            template:reminder_templates(
+                id,
+                name,
+                subject_template,
+                body_template,
+                channel,
+                created_by,
+                created_at,
+                required_variables,
+                description
+            )
         `)
         .order('name')
 
@@ -43,11 +61,19 @@ export default async function SettingsPage() {
         .select('*')
         .order('name')
 
+    // Fetch all active employees for manual email
+    const { data: employees } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, department, job_title')
+        .eq('status', 'active')
+        .order('full_name')
+
     return (
         <PageContainer>
             <SettingsPageClient
                 automationConfigs={automationConfigs || []}
                 templates={templates || []}
+                employees={employees || []}
             />
         </PageContainer>
     )

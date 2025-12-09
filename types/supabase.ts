@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -36,6 +41,8 @@ export type Database = {
     Tables: {
       automation_configs: {
         Row: {
+          cron_command: string | null
+          cron_job_name: string | null
           id: string
           is_active: boolean | null
           name: string
@@ -45,6 +52,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          cron_command?: string | null
+          cron_job_name?: string | null
           id?: string
           is_active?: boolean | null
           name: string
@@ -54,6 +63,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          cron_command?: string | null
+          cron_job_name?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
@@ -196,6 +207,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          date_of_birth: string | null
           department: string | null
           email: string
           full_name: string
@@ -205,10 +217,12 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
           status: Database["public"]["Enums"]["user_status"]
           updated_at: string | null
+          work_anniversary: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           department?: string | null
           email: string
           full_name: string
@@ -218,10 +232,12 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string | null
+          work_anniversary?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           department?: string | null
           email?: string
           full_name?: string
@@ -231,6 +247,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string | null
+          work_anniversary?: string | null
         }
         Relationships: []
       }
@@ -240,8 +257,10 @@ export type Database = {
           channel: Database["public"]["Enums"]["notification_channel"][] | null
           created_at: string | null
           created_by: string | null
+          description: string | null
           id: string
           name: string
+          required_variables: string[] | null
           subject_template: string | null
         }
         Insert: {
@@ -249,8 +268,10 @@ export type Database = {
           channel?: Database["public"]["Enums"]["notification_channel"][] | null
           created_at?: string | null
           created_by?: string | null
+          description?: string | null
           id?: string
           name: string
+          required_variables?: string[] | null
           subject_template?: string | null
         }
         Update: {
@@ -258,8 +279,10 @@ export type Database = {
           channel?: Database["public"]["Enums"]["notification_channel"][] | null
           created_at?: string | null
           created_by?: string | null
+          description?: string | null
           id?: string
           name?: string
+          required_variables?: string[] | null
           subject_template?: string | null
         }
         Relationships: [
@@ -424,7 +447,139 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_anniversary_reminders: { Args: never; Returns: number }
+      check_birthday_reminders: { Args: never; Returns: number }
+      check_task_deadline_reminders: { Args: never; Returns: number }
+      create_automation: {
+        Args: {
+          p_cron_command?: string
+          p_cron_job_name?: string
+          p_name: string
+          p_reminder_type: Database["public"]["Enums"]["reminder_type"]
+          p_template_id: string
+          p_trigger_cron: string
+        }
+        Returns: string
+      }
+      create_full_automation: {
+        Args: {
+          p_is_active?: boolean
+          p_name: string
+          p_reminder_type: Database["public"]["Enums"]["reminder_type"]
+          p_template_id: string
+          p_trigger_cron: string
+        }
+        Returns: string
+      }
+      create_reminder_template:
+        | {
+            Args: {
+              p_body_template: string
+              p_channel?: string[]
+              p_description?: string
+              p_name: string
+              p_required_variables?: string[]
+              p_subject_template: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_body: string
+              p_channels: Database["public"]["Enums"]["notification_channel"][]
+              p_name: string
+              p_subject: string
+            }
+            Returns: string
+          }
+      cron_anniversary_check: { Args: never; Returns: Json }
+      cron_birthday_check: { Args: never; Returns: Json }
+      cron_custom_event_check: { Args: never; Returns: Json }
+      cron_task_deadline_check: { Args: never; Returns: Json }
+      delete_automation: {
+        Args: { p_automation_id: string }
+        Returns: undefined
+      }
+      delete_reminder_template: {
+        Args: { p_template_id: string }
+        Returns: Json
+      }
+      get_cron_presets: { Args: never; Returns: Json }
+      get_departments: { Args: never; Returns: string[] }
+      get_template_usage: { Args: { p_template_id: string }; Returns: Json }
+      get_template_variables: { Args: never; Returns: Json }
+      invoke_send_email_edge_function: { Args: never; Returns: undefined }
+      is_admin: { Args: { user_id: string }; Returns: boolean }
+      process_anniversary_reminders_with_edge: { Args: never; Returns: Json }
+      process_birthday_reminders_with_edge: { Args: never; Returns: Json }
+      process_custom_event_reminders_with_edge: { Args: never; Returns: Json }
+      process_reminders_by_type: {
+        Args: { p_reminder_type: Database["public"]["Enums"]["reminder_type"] }
+        Returns: number
+      }
+      process_task_deadline_reminders_with_edge: { Args: never; Returns: Json }
+      replace_template_variables: {
+        Args: {
+          p_employee: Database["public"]["Tables"]["profiles"]["Row"]
+          p_template: string
+        }
+        Returns: string
+      }
+      replace_template_variables_text: {
+        Args: {
+          p_department: string
+          p_email: string
+          p_full_name: string
+          p_job_title: string
+          p_template: string
+        }
+        Returns: string
+      }
+      send_email_to_all: {
+        Args: {
+          p_body: string
+          p_department?: string
+          p_subject: string
+          p_use_template_variables?: boolean
+        }
+        Returns: Json
+      }
+      send_manual_email: {
+        Args: {
+          p_body: string
+          p_recipient_ids: string[]
+          p_subject: string
+          p_use_template_variables?: boolean
+        }
+        Returns: Json
+      }
+      toggle_automation: {
+        Args: { p_automation_id: string; p_is_active: boolean }
+        Returns: undefined
+      }
+      update_automation_schedule: {
+        Args: {
+          p_automation_id: string
+          p_name?: string
+          p_trigger_cron: string
+        }
+        Returns: undefined
+      }
+      update_reminder_template: {
+        Args: { p_body: string; p_subject: string; p_template_id: string }
+        Returns: undefined
+      }
+      update_reminder_template_full: {
+        Args: {
+          p_body?: string
+          p_description?: string
+          p_name?: string
+          p_required_variables?: string[]
+          p_subject?: string
+          p_template_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       notification_channel: "system" | "email" | "slack" | "whatsapp"
@@ -583,4 +738,3 @@ export const Constants = {
     },
   },
 } as const
-

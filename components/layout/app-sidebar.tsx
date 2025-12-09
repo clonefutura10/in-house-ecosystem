@@ -9,9 +9,9 @@ import {
     CheckCircle,
     Users,
     BarChart3,
-    Bell,
     Settings,
     LogOut,
+    FileText,
     type LucideIcon,
 } from 'lucide-react'
 
@@ -28,8 +28,8 @@ function getNavItems(isAdmin: boolean): NavItem[] {
         { title: isAdmin ? 'Tasks' : 'My Tasks', href: '/tasks', icon: CheckCircle },
         { title: 'Team', href: '/team', icon: Users, adminOnly: true },
         { title: 'Performance', href: '/performance', icon: BarChart3, adminOnly: true },
-        { title: 'Reminders', href: '/reminders', icon: Bell },
-        { title: 'Settings', href: '/settings', icon: Settings },
+        { title: 'Templates', href: '/templates', icon: FileText, adminOnly: true },
+        { title: 'Settings', href: '/settings', icon: Settings, adminOnly: true },
     ]
 }
 
@@ -110,8 +110,11 @@ export function AppSidebar({ user, onLogout }: AppSidebarProps) {
             {/* User Profile & Logout */}
             <div className="p-4 border-t border-slate-200 dark:border-slate-800">
                 <div className="flex flex-col gap-4">
-                    {/* User Info */}
-                    <div className="flex items-center gap-3">
+                    {/* User Info - Clickable to profile */}
+                    <Link
+                        href="/profile"
+                        className="flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 -m-2 rounded-lg transition-colors"
+                    >
                         <Avatar className="size-10">
                             <AvatarImage src={user.avatar_url || undefined} alt={user.full_name} />
                             <AvatarFallback className="bg-[#1387ec] text-white font-medium">
@@ -126,7 +129,7 @@ export function AppSidebar({ user, onLogout }: AppSidebarProps) {
                                 {user.email}
                             </p>
                         </div>
-                    </div>
+                    </Link>
 
                     {/* Logout Button */}
                     <button
