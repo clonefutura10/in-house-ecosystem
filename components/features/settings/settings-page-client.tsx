@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/dialog'
 import { Plus, ChevronDown, ChevronUp, Clock, Trash2, AlertCircle, Info, Mail, Send, Users, CheckCircle2, X } from 'lucide-react'
 import { Database } from '@/types/supabase'
+import { TimeSchedulePicker } from '@/components/ui/time-schedule-picker'
 
 type ReminderType = Database['public']['Enums']['reminder_type']
 
@@ -178,16 +179,12 @@ export function SettingsPageClient({ automationConfigs, templates, employees }: 
     const [newName, setNewName] = useState('')
     const [newReminderType, setNewReminderType] = useState<ReminderType>('birthday')
     const [newTemplateId, setNewTemplateId] = useState('')
-    const [newCronPreset, setNewCronPreset] = useState('0 9 * * *')
-    const [useCustomCron, setUseCustomCron] = useState(false)
-    const [customCron, setCustomCron] = useState('')
+    const [newScheduleCron, setNewScheduleCron] = useState('0 9 * * *')
 
     // Local state for editing
     const [editSubject, setEditSubject] = useState('')
     const [editBody, setEditBody] = useState('')
-    const [editCronPreset, setEditCronPreset] = useState('')
-    const [useCustomEditCron, setUseCustomEditCron] = useState(false)
-    const [customEditCron, setCustomEditCron] = useState('')
+    const [editScheduleCron, setEditScheduleCron] = useState('')
 
     // Delete confirmation
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -213,15 +210,7 @@ export function SettingsPageClient({ automationConfigs, templates, employees }: 
             setEditingConfig(config)
             setEditSubject(config.template?.subject_template || '')
             setEditBody(config.template?.body_template || '')
-
-            const matchingPreset = defaultCronPresets.find(p => p.value === config.trigger_cron)
-            if (matchingPreset) {
-                setEditCronPreset(matchingPreset.value)
-                setUseCustomEditCron(false)
-            } else {
-                setUseCustomEditCron(true)
-                setCustomEditCron(config.trigger_cron)
-            }
+            setEditScheduleCron(config.trigger_cron)
         }
     }
 
@@ -262,7 +251,7 @@ export function SettingsPageClient({ automationConfigs, templates, employees }: 
             return
         }
 
-        const newCron = useCustomEditCron ? customEditCron : editCronPreset || editingConfig.trigger_cron
+        const newCron = editScheduleCron || editingConfig.trigger_cron
         if (newCron !== editingConfig.trigger_cron) {
             const { error: scheduleError } = await supabase.rpc('update_automation_schedule', {
                 p_automation_id: editingConfig.id,
@@ -291,7 +280,7 @@ export function SettingsPageClient({ automationConfigs, templates, employees }: 
         setError(null)
 
         const supabase = createClient()
-        const cronExpression = useCustomCron ? customCron : newCronPreset
+        const cronExpression = newScheduleCron
 
         const { error: createError } = await supabase.rpc('create_full_automation', {
             p_name: newName.trim(),
@@ -310,9 +299,7 @@ export function SettingsPageClient({ automationConfigs, templates, employees }: 
         setNewName('')
         setNewReminderType('birthday')
         setNewTemplateId('')
-        setNewCronPreset('0 9 * * *')
-        setUseCustomCron(false)
-        setCustomCron('')
+        setNewScheduleCron('0 9 * * *')
         setIsCreateOpen(false)
 
         router.refresh()
@@ -487,8 +474,8 @@ export function SettingsPageClient({ automationConfigs, templates, employees }: 
             <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg w-fit">
                 <button
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'automations'
-                            ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     onClick={() => setActiveTab('automations')}
                 >
@@ -497,8 +484,8 @@ export function SettingsPageClient({ automationConfigs, templates, employees }: 
                 </button>
                 <button
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'compose'
-                            ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     onClick={() => setActiveTab('compose')}
                 >
@@ -583,47 +570,10 @@ export function SettingsPageClient({ automationConfigs, templates, employees }: 
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="flex items-center gap-2">
-                                            <Clock className="h-4 w-4" />
-                                            Schedule
-                                        </Label>
-
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Switch
-                                                checked={useCustomCron}
-                                                onCheckedChange={setUseCustomCron}
-                                            />
-                                            <span className="text-sm text-slate-600 dark:text-slate-400">
-                                                Use custom cron expression
-                                            </span>
-                                        </div>
-
-                                        {useCustomCron ? (
-                                            <div className="space-y-2">
-                                                <Input
-                                                    value={customCron}
-                                                    onChange={(e) => setCustomCron(e.target.value)}
-                                                    placeholder="0 9 * * *"
-                                                    className="font-mono"
-                                                />
-                                                <p className="text-xs text-slate-500">
-                                                    Format: minute hour day-of-month month day-of-week
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <Select value={newCronPreset} onValueChange={setNewCronPreset}>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {defaultCronPresets.map((preset) => (
-                                                        <SelectItem key={preset.value} value={preset.value}>
-                                                            {preset.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        )}
+                                        <TimeSchedulePicker
+                                            value={newScheduleCron}
+                                            onChange={setNewScheduleCron}
+                                        />
                                     </div>
 
                                     {(newReminderType === 'birthday' || newReminderType === 'anniversary') && (
@@ -766,48 +716,11 @@ export function SettingsPageClient({ automationConfigs, templates, employees }: 
                                         <div className="border-t border-slate-200 dark:border-slate-800 p-4">
                                             <div className="flex gap-6">
                                                 <div className="flex-grow space-y-4">
-                                                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-3">
-                                                        <Label className="flex items-center gap-2 font-semibold">
-                                                            <Clock className="h-4 w-4" />
-                                                            Schedule
-                                                        </Label>
-
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <Switch
-                                                                checked={useCustomEditCron}
-                                                                onCheckedChange={setUseCustomEditCron}
-                                                            />
-                                                            <span className="text-sm text-slate-600 dark:text-slate-400">
-                                                                Use custom cron expression
-                                                            </span>
-                                                        </div>
-
-                                                        {useCustomEditCron ? (
-                                                            <div className="space-y-2">
-                                                                <Input
-                                                                    value={customEditCron}
-                                                                    onChange={(e) => setCustomEditCron(e.target.value)}
-                                                                    placeholder="0 9 * * *"
-                                                                    className="font-mono bg-white dark:bg-slate-900"
-                                                                />
-                                                            </div>
-                                                        ) : (
-                                                            <Select
-                                                                value={editCronPreset || config.trigger_cron}
-                                                                onValueChange={setEditCronPreset}
-                                                            >
-                                                                <SelectTrigger className="bg-white dark:bg-slate-900">
-                                                                    <SelectValue />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {defaultCronPresets.map((preset) => (
-                                                                        <SelectItem key={preset.value} value={preset.value}>
-                                                                            {preset.label}
-                                                                        </SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        )}
+                                                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                                        <TimeSchedulePicker
+                                                            value={editScheduleCron || config.trigger_cron}
+                                                            onChange={setEditScheduleCron}
+                                                        />
                                                     </div>
 
                                                     {getRequiredVariablesMessage(config.template) && (
@@ -1066,8 +979,8 @@ export function SettingsPageClient({ automationConfigs, templates, employees }: 
                                                     onClick={() => toggleRecipient(employee.id)}
                                                 >
                                                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRecipients.includes(employee.id)
-                                                            ? 'bg-[#1387ec] border-[#1387ec]'
-                                                            : 'border-slate-300 dark:border-slate-600'
+                                                        ? 'bg-[#1387ec] border-[#1387ec]'
+                                                        : 'border-slate-300 dark:border-slate-600'
                                                         }`}>
                                                         {selectedRecipients.includes(employee.id) && (
                                                             <CheckCircle2 className="h-3 w-3 text-white" />
