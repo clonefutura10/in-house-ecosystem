@@ -15,9 +15,23 @@ export const getTaskDetailsInputSchema = z.object({
   taskId: z.string().describe('The ID of the task to get details for'),
 })
 
+// Employee-friendly schemas that accept task names/titles instead of IDs
+export const getTaskDetailsByIdentifierSchema = z.object({
+  taskIdentifier: z.string().describe('The task title, name, or keywords to search for'),
+})
+
 export const updateTaskStatusInputSchema = z.object({
   taskId: z.string().describe('The ID of the task to update'),
   status: taskStatusSchema.describe('The new status for the task'),
+})
+
+export const updateTaskStatusByIdentifierSchema = z.object({
+  taskIdentifier: z.string().describe('The task title, name, or keywords to search for'),
+  status: taskStatusSchema.describe('The new status for the task'),
+})
+
+export const searchMyTaskByTitleSchema = z.object({
+  searchTerm: z.string().describe('Part of the task title or keywords to search for'),
 })
 
 export const createTaskInputSchema = z.object({
@@ -61,7 +75,10 @@ export type TaskStatus = z.infer<typeof taskStatusSchema>
 export type TaskPriority = z.infer<typeof taskPrioritySchema>
 export type ListTasksInput = z.infer<typeof listTasksInputSchema>
 export type GetTaskDetailsInput = z.infer<typeof getTaskDetailsInputSchema>
+export type GetTaskDetailsByIdentifier = z.infer<typeof getTaskDetailsByIdentifierSchema>
 export type UpdateTaskStatusInput = z.infer<typeof updateTaskStatusInputSchema>
+export type UpdateTaskStatusByIdentifier = z.infer<typeof updateTaskStatusByIdentifierSchema>
+export type SearchMyTaskByTitle = z.infer<typeof searchMyTaskByTitleSchema>
 export type CreateTaskInput = z.infer<typeof createTaskInputSchema>
 export type CreateTaskWithAssignee = z.infer<typeof createTaskWithAssigneeSchema>
 export type AssignTaskInput = z.infer<typeof assignTaskInputSchema>

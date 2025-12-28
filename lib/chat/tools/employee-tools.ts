@@ -3,9 +3,10 @@ import { SupabaseClient } from '@supabase/supabase-js'
 import { Database } from '@/types/supabase'
 import {
   listTasksInputSchema,
-  getTaskDetailsInputSchema,
-  updateTaskStatusInputSchema,
+  getTaskDetailsByIdentifierSchema,
+  updateTaskStatusByIdentifierSchema,
   createTaskInputSchema,
+  searchMyTaskByTitleSchema,
   PendingApproval,
 } from '../schemas'
 
@@ -101,10 +102,81 @@ export function createListMyTasksTool(supabase: SupabaseClientType, userId: stri
   )
 }
 
-// Get task details
-export function createGetTaskDetailsTool(supabase: SupabaseClientType, _userId: string) {
+// Search for a task by title within user's assigned tasks
+export function createSearchMyTaskByTitleTool(supabase: SupabaseClientType, userId: string) {
   return tool(
-    async ({ taskId }) => {
+    async ({ searchTerm }) => {
+      const { data: tasks, error } = await supabase
+        .from('tasks')
+        .select(`
+          id, title, status, priority, due_date
+        `)
+        .eq('assigned_to', userId)
+        .ilike('title', `%${searchTerm}%`)
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (error) {
+        console.error('[searchMyTaskByTitle] Error:', error)
+        return `I had trouble searching for tasks. Please try again.`
+      }
+
+      if (!tasks || tasks.length === 0) {
+        return `I couldn't find any of your tasks matching "${searchTerm}".`
+      }
+
+      const taskList = tasks
+        .map((t, i) => {
+          const dueStr = t.due_date
+            ? `due ${new Date(t.due_date).toLocaleDateString()}`
+            : 'no due date'
+          return `${i + 1}. "${t.title}" - ${t.status?.replace('_', ' ')} (${dueStr})`
+        })
+        .join('\n')
+
+      return `Found these tasks matching "${searchTerm}":\n\n${taskList}`
+    },
+    {
+      name: 'searchMyTaskByTitle',
+      description: 'Search for a task by its title within your assigned tasks. Use this to find a task when you refer to it by name.',
+      schema: searchMyTaskByTitleSchema,
+    }
+  )
+}
+
+// Get task details - accepts task identifier (name/title) and resolves to task
+export function createGetTaskDetailsTool(supabase: SupabaseClientType, userId: string) {
+  return tool(
+    async ({ taskIdentifier }) => {
+      // Search for task by title (partial match) within user's assigned tasks
+      const { data: foundTasks, error: searchError } = await supabase
+        .from('tasks')
+        .select('id, title')
+        .eq('assigned_to', userId)
+        .ilike('title', `%${taskIdentifier}%`)
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (searchError) {
+        console.error('[getTaskDetails] Search error:', searchError)
+        return `I had trouble searching for that task. Please try again.`
+      }
+
+      if (!foundTasks || foundTasks.length === 0) {
+        return `I couldn't find any of your tasks matching "${taskIdentifier}". Could you give me the exact task name?`
+      }
+
+      // If multiple tasks match, ask for clarification
+      if (foundTasks.length > 1) {
+        const taskList = foundTasks.map((t, i) => `${i + 1}. "${t.title}"`).join('\n')
+        return `I found multiple tasks matching "${taskIdentifier}":\n\n${taskList}\n\nWhich one would you like details for?`
+      }
+
+      const taskId = foundTasks[0].id
+
+      // Now get full details
       const { data: task, error } = await supabase
         .from('tasks')
         .select(`
@@ -117,7 +189,7 @@ export function createGetTaskDetailsTool(supabase: SupabaseClientType, _userId: 
         .single()
 
       if (error || !task) {
-        return `I couldn't find that task. Please check the task ID.`
+        return `I couldn't find that task. Please try again.`
       }
 
       const assignee = (task.assigned_to_profile as { full_name: string } | null)?.full_name || 'Unassigned'
@@ -138,41 +210,56 @@ ${task.tags?.length ? `Tags: ${task.tags.join(', ')}` : ''}`
     },
     {
       name: 'getTaskDetails',
-      description: 'Get detailed information about a specific task by its ID.',
-      schema: getTaskDetailsInputSchema,
+      description: 'Get detailed information about a task by its title or name. Searches within your assigned tasks.',
+      schema: getTaskDetailsByIdentifierSchema,
     }
   )
 }
 
-// Update task status (returns pending approval)
+// Update task status - accepts task identifier (name/title) and resolves to task
 export function createUpdateTaskStatusTool(supabase: SupabaseClientType, userId: string) {
   return tool(
-    async ({ taskId, status }): Promise<string | PendingApproval> => {
-      // First get the task to show in summary
-      const { data: task } = await supabase
+    async ({ taskIdentifier, status }): Promise<string | PendingApproval> => {
+      // Search for task by title (partial match) within user's assigned tasks
+      const { data: foundTasks, error: searchError } = await supabase
         .from('tasks')
-        .select('title, status')
-        .eq('id', taskId)
-        .single()
+        .select('id, title, status')
+        .eq('assigned_to', userId)
+        .ilike('title', `%${taskIdentifier}%`)
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false })
+        .limit(5)
 
-      if (!task) {
-        return `I couldn't find that task. Please check the task ID.`
+      if (searchError) {
+        console.error('[updateTaskStatus] Search error:', searchError)
+        return `I had trouble searching for that task. Please try again.`
       }
 
+      if (!foundTasks || foundTasks.length === 0) {
+        return `I couldn't find any of your tasks matching "${taskIdentifier}". Could you give me the exact task name?`
+      }
+
+      // If multiple tasks match, ask for clarification
+      if (foundTasks.length > 1) {
+        const taskList = foundTasks.map((t, i) => `${i + 1}. "${t.title}" (${t.status?.replace('_', ' ')})`).join('\n')
+        return `I found multiple tasks matching "${taskIdentifier}":\n\n${taskList}\n\nWhich one do you want to update?`
+      }
+
+      const task = foundTasks[0]
       const statusDisplay = status.replace('_', ' ')
       const currentStatus = task.status?.replace('_', ' ') || 'unknown'
 
       return {
         requiresApproval: true,
         action: 'updateTaskStatus',
-        data: { taskId, status, userId },
+        data: { taskId: task.id, status, userId },
         summary: `I'll change "${task.title}" from ${currentStatus} to ${statusDisplay}. Is that right?`,
       }
     },
     {
       name: 'updateTaskStatus',
-      description: 'Update the status of a task. Statuses: todo, in_progress, review, done, blocked.',
-      schema: updateTaskStatusInputSchema,
+      description: 'Update the status of a task by its title or name. Statuses: todo, in_progress, review, done, blocked.',
+      schema: updateTaskStatusByIdentifierSchema,
     }
   )
 }
