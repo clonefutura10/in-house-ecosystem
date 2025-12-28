@@ -5,6 +5,7 @@ import {
   createGetTaskDetailsTool,
   createUpdateTaskStatusTool,
   createCreateTaskForSelfTool,
+  createSearchMyTaskByTitleTool,
 } from './employee-tools'
 import {
   createListAllTasksTool,
@@ -29,6 +30,7 @@ export function getToolsForRole(
     createGetTaskDetailsTool(supabase, userId),
     createUpdateTaskStatusTool(supabase, userId),
     createCreateTaskForSelfTool(supabase, userId),
+    createSearchMyTaskByTitleTool(supabase, userId),
   ]
 
   if (role === 'employee') {
