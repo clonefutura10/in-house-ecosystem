@@ -21,7 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { Pencil, Archive, CheckCircle, Send, Loader2, X, ChevronRight } from 'lucide-react'
+import { Archive, CheckCircle, Send, Loader2, X, ChevronRight, ArchiveRestore } from 'lucide-react'
 import type { Database } from '@/types/supabase'
 
 type Task = Database['public']['Tables']['tasks']['Row'] & {
@@ -159,12 +159,14 @@ export function TaskDetailsSheet({ task, onClose, profiles, isAdmin }: TaskDetai
         setIsUpdating(false)
     }
 
-    const handleArchive = async () => {
+    const handleToggleArchive = async () => {
         if (!localTask) return
         setIsUpdating(true)
 
+        const newArchivedState = !localTask.is_archived
+
         const supabase = createClient()
-        await supabase.from('tasks').update({ is_archived: true }).eq('id', localTask.id)
+        await supabase.from('tasks').update({ is_archived: newArchivedState }).eq('id', localTask.id)
 
         router.refresh()
         onClose()
@@ -208,13 +210,18 @@ export function TaskDetailsSheet({ task, onClose, profiles, isAdmin }: TaskDetai
 
                             {/* Action Buttons */}
                             <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" disabled={isUpdating}>
-                                    <Pencil className="h-4 w-4 mr-1" />
-                                    Edit
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={handleArchive} disabled={isUpdating}>
-                                    <Archive className="h-4 w-4 mr-1" />
-                                    Archive
+                                <Button variant="outline" size="sm" onClick={handleToggleArchive} disabled={isUpdating}>
+                                    {localTask.is_archived ? (
+                                        <>
+                                            <ArchiveRestore className="h-4 w-4 mr-1" />
+                                            Restore
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Archive className="h-4 w-4 mr-1" />
+                                            Archive
+                                        </>
+                                    )}
                                 </Button>
                                 <Button
                                     size="sm"
