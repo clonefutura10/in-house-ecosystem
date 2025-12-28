@@ -2,34 +2,34 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PageContainer } from '@/components/layout'
 import { PerformancePageClient } from '@/components/features/performance/performance-page-client'
+import { getAuthenticatedUser } from '@/lib/supabase/auth'
 
 export const dynamic = 'force-dynamic'
 
 export default async function PerformancePage() {
     const supabase = await createClient()
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    // Use cached auth - deduplicated with layout
+    const user = await getAuthenticatedUser()
 
     if (!user) {
         redirect('/login')
     }
 
-    // Check if user is admin
-    const { data: currentProfile } = await supabase
+    const isAdmin = user.role === 'admin'
+
+    // Start fetching employees and full profile early (will run in parallel with other operations)
+    // Performance page needs full profile for the client component
+    const employeesPromise = supabase
+        .from('profiles')
+        .select('id, full_name, email, avatar_url, department, job_title, role, status')
+        .order('full_name')
+
+    const fullProfilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single()
-
-    const isAdmin = currentProfile?.role === 'admin'
-
-    // Fetch all employees (for admin)
-    const { data: employees } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, avatar_url, department, job_title, role, status')
-        .order('full_name')
 
     // Fetch performance metrics directly with proper typing
     let performanceMetrics: Array<{
@@ -178,11 +178,15 @@ export default async function PerformancePage() {
         appraisals = []
     }
 
-    // Fetch tasks for summary stats
-    const { data: tasks } = await supabase
-        .from('tasks')
-        .select('id, status, assigned_to, due_date, updated_at, created_at')
-        .eq('is_archived', false)
+    // Fetch tasks for summary stats and await employees and full profile
+    const [{ data: tasks }, { data: employees }, { data: currentProfile }] = await Promise.all([
+        supabase
+            .from('tasks')
+            .select('id, status, assigned_to, due_date, updated_at, created_at')
+            .eq('is_archived', false),
+        employeesPromise,
+        fullProfilePromise,
+    ])
 
     // Map tasks with proper types
     const mappedTasks = (tasks || []).map(t => ({

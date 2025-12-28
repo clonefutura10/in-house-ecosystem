@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
 import { DashboardShell } from '@/components/layout'
+import { getAuthenticatedUser } from '@/lib/supabase/auth'
 
 // Prevent Next.js from caching this layout
 export const dynamic = 'force-dynamic'
@@ -9,41 +9,18 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode
 }) {
-    const supabase = await createClient()
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    // Use cached auth function - this will be deduplicated across all server components
+    const user = await getAuthenticatedUser()
 
     // If no user, middleware will handle redirect
-    // This should not happen as middleware protects this route
     if (!user) {
         return null
     }
 
-    // Fetch user profile
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-    // If no profile, show basic shell with user email
-    const userInfo = profile
-        ? {
-            id: profile.id,
-            full_name: profile.full_name,
-            email: profile.email,
-            avatar_url: profile.avatar_url,
-            role: profile.role as 'admin' | 'employee',
-        }
-        : {
-            id: user.id,
-            full_name: user.email?.split('@')[0] || 'User',
-            email: user.email || '',
-            avatar_url: null,
-            role: 'employee' as const,
-        }
-
-    return <DashboardShell user={userInfo}>{children}</DashboardShell>
+    return (
+        <DashboardShell user={user}>
+            {children}
+        </DashboardShell>
+    )
 }
+

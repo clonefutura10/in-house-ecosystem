@@ -2,28 +2,22 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PageContainer } from '@/components/layout'
 import { NotificationsPageClient } from '@/components/features/notifications/notifications-page-client'
+import { getAuthenticatedUser } from '@/lib/supabase/auth'
 
 export const dynamic = 'force-dynamic'
 
 export default async function NotificationsPage() {
     const supabase = await createClient()
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    // Use cached auth - deduplicated with layout
+    const user = await getAuthenticatedUser()
 
     if (!user) {
         redirect('/login')
     }
 
-    // Check if user is admin
-    const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-    if (currentProfile?.role !== 'admin') {
+    // Only admins can access notifications
+    if (user.role !== 'admin') {
         redirect('/dashboard')
     }
 
@@ -46,3 +40,4 @@ export default async function NotificationsPage() {
         </PageContainer>
     )
 }
+

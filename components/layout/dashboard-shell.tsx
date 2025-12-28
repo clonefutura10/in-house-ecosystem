@@ -4,16 +4,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AppSidebar } from './app-sidebar'
 import { ChatFAB, ChatDrawer } from '@/components/features/chat'
+import { UserProvider, UserInfo } from './user-context'
 
 interface DashboardShellProps {
     children: React.ReactNode
-    user: {
-        id: string
-        full_name: string
-        email: string
-        avatar_url?: string | null
-        role: 'admin' | 'employee'
-    }
+    user: UserInfo
 }
 
 export function DashboardShell({ children, user }: DashboardShellProps) {
@@ -27,11 +22,14 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
     }
 
     return (
-        <div className="flex h-screen bg-[#f6f7f8] dark:bg-[#101a22]">
-            <AppSidebar user={user} onLogout={handleLogout} />
-            <div className="flex-1 overflow-y-auto">{children}</div>
-            <ChatFAB />
-            <ChatDrawer />
-        </div>
+        <UserProvider user={user}>
+            <div className="flex h-screen bg-[#f6f7f8] dark:bg-[#101a22]">
+                <AppSidebar user={user} onLogout={handleLogout} />
+                <div className="flex-1 overflow-y-auto">{children}</div>
+                <ChatFAB />
+                <ChatDrawer />
+            </div>
+        </UserProvider>
     )
 }
+

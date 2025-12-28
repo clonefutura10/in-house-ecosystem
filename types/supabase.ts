@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.1"
   }
   graphql_public: {
     Tables: {
@@ -39,6 +39,269 @@ export type Database = {
   }
   public: {
     Tables: {
+      appraisals: {
+        Row: {
+          areas_for_improvement: string | null
+          communication_score: number | null
+          created_at: string | null
+          employee_comments: string | null
+          goals_for_next_period: string | null
+          id: string
+          initiative_score: number | null
+          is_published: boolean | null
+          manager_comments: string | null
+          overall_score: number | null
+          period: Database["public"]["Enums"]["appraisal_period"]
+          period_number: number
+          period_year: number
+          productivity_score: number | null
+          published_at: string | null
+          quality_score: number | null
+          review_date: string | null
+          reviewer_id: string
+          status: string | null
+          strengths: string | null
+          teamwork_score: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          areas_for_improvement?: string | null
+          communication_score?: number | null
+          created_at?: string | null
+          employee_comments?: string | null
+          goals_for_next_period?: string | null
+          id?: string
+          initiative_score?: number | null
+          is_published?: boolean | null
+          manager_comments?: string | null
+          overall_score?: number | null
+          period: Database["public"]["Enums"]["appraisal_period"]
+          period_number?: number
+          period_year?: number
+          productivity_score?: number | null
+          published_at?: string | null
+          quality_score?: number | null
+          review_date?: string | null
+          reviewer_id: string
+          status?: string | null
+          strengths?: string | null
+          teamwork_score?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          areas_for_improvement?: string | null
+          communication_score?: number | null
+          created_at?: string | null
+          employee_comments?: string | null
+          goals_for_next_period?: string | null
+          id?: string
+          initiative_score?: number | null
+          is_published?: boolean | null
+          manager_comments?: string | null
+          overall_score?: number | null
+          period?: Database["public"]["Enums"]["appraisal_period"]
+          period_number?: number
+          period_year?: number
+          productivity_score?: number | null
+          published_at?: string | null
+          quality_score?: number | null
+          review_date?: string | null
+          reviewer_id?: string
+          status?: string | null
+          strengths?: string | null
+          teamwork_score?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appraisals_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appraisals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_jobs: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          department: string | null
+          description: string
+          education_requirements: string[] | null
+          experience_years_max: number | null
+          experience_years_min: number | null
+          id: string
+          is_archived: boolean | null
+          preferred_skills: string[] | null
+          required_skills: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          department?: string | null
+          description: string
+          education_requirements?: string[] | null
+          experience_years_max?: number | null
+          experience_years_min?: number | null
+          id?: string
+          is_archived?: boolean | null
+          preferred_skills?: string[] | null
+          required_skills?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          department?: string | null
+          description?: string
+          education_requirements?: string[] | null
+          experience_years_max?: number | null
+          experience_years_min?: number | null
+          id?: string
+          is_archived?: boolean | null
+          preferred_skills?: string[] | null
+          required_skills?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_jobs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_resumes: {
+        Row: {
+          created_at: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          job_id: string | null
+          llamaparse_job_id: string | null
+          parsing_error: string | null
+          parsing_status: Database["public"]["Enums"]["parsing_status"] | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          job_id?: string | null
+          llamaparse_job_id?: string | null
+          parsing_error?: string | null
+          parsing_status?: Database["public"]["Enums"]["parsing_status"] | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          job_id?: string | null
+          llamaparse_job_id?: string | null
+          parsing_error?: string | null
+          parsing_status?: Database["public"]["Enums"]["parsing_status"] | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_resumes_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_resumes_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_scores: {
+        Row: {
+          calculated_at: string | null
+          education_score: number | null
+          experience_score: number | null
+          id: string
+          job_id: string
+          keyword_density_score: number | null
+          keyword_matches: string[] | null
+          overall_score: number | null
+          resume_id: string
+          score_breakdown: Json | null
+          skill_match_score: number | null
+        }
+        Insert: {
+          calculated_at?: string | null
+          education_score?: number | null
+          experience_score?: number | null
+          id?: string
+          job_id: string
+          keyword_density_score?: number | null
+          keyword_matches?: string[] | null
+          overall_score?: number | null
+          resume_id: string
+          score_breakdown?: Json | null
+          skill_match_score?: number | null
+        }
+        Update: {
+          calculated_at?: string | null
+          education_score?: number | null
+          experience_score?: number | null
+          id?: string
+          job_id?: string
+          keyword_density_score?: number | null
+          keyword_matches?: string[] | null
+          overall_score?: number | null
+          resume_id?: string
+          score_breakdown?: Json | null
+          skill_match_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_scores_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_scores_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "ats_resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_configs: {
         Row: {
           cron_command: string | null
@@ -196,6 +459,206 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parsed_resume_data: {
+        Row: {
+          candidate_name: string | null
+          education: Json | null
+          email: string | null
+          experience_years: number | null
+          id: string
+          parsed_at: string | null
+          phone: string | null
+          raw_text: string | null
+          resume_id: string
+          skills: string[] | null
+          work_experience: Json | null
+        }
+        Insert: {
+          candidate_name?: string | null
+          education?: Json | null
+          email?: string | null
+          experience_years?: number | null
+          id?: string
+          parsed_at?: string | null
+          phone?: string | null
+          raw_text?: string | null
+          resume_id: string
+          skills?: string[] | null
+          work_experience?: Json | null
+        }
+        Update: {
+          candidate_name?: string | null
+          education?: Json | null
+          email?: string | null
+          experience_years?: number | null
+          id?: string
+          parsed_at?: string | null
+          phone?: string | null
+          raw_text?: string | null
+          resume_id?: string
+          skills?: string[] | null
+          work_experience?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parsed_resume_data_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: true
+            referencedRelation: "ats_resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      performance_goals: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          current_value: number | null
+          description: string | null
+          due_date: string | null
+          id: string
+          status: string | null
+          target_value: number | null
+          title: string
+          unit: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          current_value?: number | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string | null
+          target_value?: number | null
+          title: string
+          unit?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          current_value?: number | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string | null
+          target_value?: number | null
+          title?: string
+          unit?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_goals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      performance_metrics: {
+        Row: {
+          attendance_days: number | null
+          attendance_rate: number | null
+          bonus_amount: number | null
+          completion_rate: number | null
+          created_at: string | null
+          id: string
+          incentive_percentage: number | null
+          manager_notes: string | null
+          on_time_rate: number | null
+          overall_score: number | null
+          period_end: string
+          period_start: string
+          quality_rating: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          tasks_assigned: number | null
+          tasks_completed: number | null
+          tasks_on_time: number | null
+          tasks_overdue: number | null
+          updated_at: string | null
+          user_id: string
+          working_days: number | null
+        }
+        Insert: {
+          attendance_days?: number | null
+          attendance_rate?: number | null
+          bonus_amount?: number | null
+          completion_rate?: number | null
+          created_at?: string | null
+          id?: string
+          incentive_percentage?: number | null
+          manager_notes?: string | null
+          on_time_rate?: number | null
+          overall_score?: number | null
+          period_end: string
+          period_start: string
+          quality_rating?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          tasks_assigned?: number | null
+          tasks_completed?: number | null
+          tasks_on_time?: number | null
+          tasks_overdue?: number | null
+          updated_at?: string | null
+          user_id: string
+          working_days?: number | null
+        }
+        Update: {
+          attendance_days?: number | null
+          attendance_rate?: number | null
+          bonus_amount?: number | null
+          completion_rate?: number | null
+          created_at?: string | null
+          id?: string
+          incentive_percentage?: number | null
+          manager_notes?: string | null
+          on_time_rate?: number | null
+          overall_score?: number | null
+          period_end?: string
+          period_start?: string
+          quality_rating?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          tasks_assigned?: number | null
+          tasks_completed?: number | null
+          tasks_on_time?: number | null
+          tasks_overdue?: number | null
+          updated_at?: string | null
+          user_id?: string
+          working_days?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_metrics_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_metrics_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -447,6 +910,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_performance_metrics: {
+        Args: {
+          p_period_end: string
+          p_period_start: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       check_anniversary_reminders: { Args: never; Returns: number }
       check_birthday_reminders: { Args: never; Returns: number }
       check_task_deadline_reminders: { Args: never; Returns: number }
@@ -474,21 +945,21 @@ export type Database = {
       create_reminder_template:
         | {
             Args: {
+              p_body: string
+              p_channels: Database["public"]["Enums"]["notification_channel"][]
+              p_name: string
+              p_subject: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
               p_body_template: string
               p_channel?: string[]
               p_description?: string
               p_name: string
               p_required_variables?: string[]
               p_subject_template: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_body: string
-              p_channels: Database["public"]["Enums"]["notification_channel"][]
-              p_name: string
-              p_subject: string
             }
             Returns: string
           }
@@ -504,8 +975,17 @@ export type Database = {
         Args: { p_template_id: string }
         Returns: Json
       }
+      generate_monthly_performance: {
+        Args: { p_month?: number; p_year?: number }
+        Returns: Json
+      }
+      generate_quarterly_performance: {
+        Args: { p_quarter?: number; p_year?: number }
+        Returns: Json
+      }
       get_cron_presets: { Args: never; Returns: Json }
       get_departments: { Args: never; Returns: string[] }
+      get_performance_summary: { Args: { p_user_id?: string }; Returns: Json }
       get_template_usage: { Args: { p_template_id: string }; Returns: Json }
       get_template_variables: { Args: never; Returns: Json }
       invoke_send_email_edge_function: { Args: never; Returns: undefined }
@@ -518,6 +998,10 @@ export type Database = {
         Returns: number
       }
       process_task_deadline_reminders_with_edge: { Args: never; Returns: Json }
+      publish_appraisal: {
+        Args: { p_appraisal_id: string }
+        Returns: undefined
+      }
       replace_template_variables: {
         Args: {
           p_employee: Database["public"]["Tables"]["profiles"]["Row"]
@@ -565,6 +1049,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_performance_metrics: {
+        Args: {
+          p_attendance_rate?: number
+          p_manager_notes?: string
+          p_metric_id: string
+          p_quality_rating?: number
+        }
+        Returns: undefined
+      }
       update_reminder_template: {
         Args: { p_body: string; p_subject: string; p_template_id: string }
         Returns: undefined
@@ -580,9 +1073,29 @@ export type Database = {
         }
         Returns: undefined
       }
+      upsert_appraisal: {
+        Args: {
+          p_areas_for_improvement?: string
+          p_comments?: string
+          p_communication_score?: number
+          p_goals?: string
+          p_initiative_score?: number
+          p_period: Database["public"]["Enums"]["appraisal_period"]
+          p_period_number: number
+          p_period_year: number
+          p_productivity_score?: number
+          p_quality_score?: number
+          p_strengths?: string
+          p_teamwork_score?: number
+          p_user_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
+      appraisal_period: "monthly" | "quarterly" | "yearly"
       notification_channel: "system" | "email" | "slack" | "whatsapp"
+      parsing_status: "pending" | "processing" | "completed" | "failed"
       reminder_type:
         | "birthday"
         | "anniversary"
@@ -723,7 +1236,9 @@ export const Constants = {
   },
   public: {
     Enums: {
+      appraisal_period: ["monthly", "quarterly", "yearly"],
       notification_channel: ["system", "email", "slack", "whatsapp"],
+      parsing_status: ["pending", "processing", "completed", "failed"],
       reminder_type: [
         "birthday",
         "anniversary",
