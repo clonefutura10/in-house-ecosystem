@@ -1,28 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
 import { PageContainer } from '@/components/layout'
 import { TeamPageClient } from '@/components/features/team/team-page-client'
+import { getAuthenticatedUser } from '@/lib/supabase/auth'
 
 export const dynamic = 'force-dynamic'
 
 export default async function TeamPage() {
     const supabase = await createClient()
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    // Use cached auth - deduplicated with layout
+    const user = await getAuthenticatedUser()
 
     if (!user) {
         return null
     }
 
-    // Fetch current user's profile to check if admin
-    const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-    const isAdmin = currentProfile?.role === 'admin'
+    const isAdmin = user.role === 'admin'
 
     // Fetch all employees
     const { data: employees, error } = await supabase
@@ -44,3 +37,4 @@ export default async function TeamPage() {
         </PageContainer>
     )
 }
+

@@ -15,7 +15,7 @@ import {
 type SupabaseClientType = SupabaseClient<Database>
 
 // List all tasks (admin only)
-export function createListAllTasksTool(supabase: SupabaseClientType, userId: string) {
+export function createListAllTasksTool(supabase: SupabaseClientType, _userId: string) {
   return tool(
     async ({ status, priority }) => {
       let query = supabase
@@ -106,7 +106,7 @@ export function createCreateTaskTool(supabase: SupabaseClientType, userId: strin
 }
 
 // Assign task to someone (admin only) - resolves task title and user name to IDs
-export function createAssignTaskTool(supabase: SupabaseClientType, userId: string) {
+export function createAssignTaskTool(supabase: SupabaseClientType, _userId: string) {
   return tool(
     async ({ taskIdentifier, assignToName }): Promise<string | PendingApproval> => {
       // Search for task by title (partial match)
@@ -172,7 +172,7 @@ export function createAssignTaskTool(supabase: SupabaseClientType, userId: strin
 }
 
 // List employees (admin only) - excludes admins
-export function createListEmployeesTool(supabase: SupabaseClientType, userId: string) {
+export function createListEmployeesTool(supabase: SupabaseClientType, _userId: string) {
   return tool(
     async ({ department }) => {
       let query = supabase
@@ -214,7 +214,7 @@ export function createListEmployeesTool(supabase: SupabaseClientType, userId: st
 }
 
 // Delete/archive task (admin only)
-export function createDeleteTaskTool(supabase: SupabaseClientType, userId: string) {
+export function createDeleteTaskTool(supabase: SupabaseClientType, _userId: string) {
   return tool(
     async ({ taskId }): Promise<string | PendingApproval> => {
       const { data: task } = await supabase
@@ -243,7 +243,7 @@ export function createDeleteTaskTool(supabase: SupabaseClientType, userId: strin
 }
 
 // Update task details (admin only)
-export function createUpdateTaskTool(supabase: SupabaseClientType, userId: string) {
+export function createUpdateTaskTool(supabase: SupabaseClientType, _userId: string) {
   return tool(
     async ({ taskId, title, description, priority, dueDate }): Promise<string | PendingApproval> => {
       const { data: task } = await supabase
@@ -282,7 +282,7 @@ export function createUpdateTaskTool(supabase: SupabaseClientType, userId: strin
 }
 
 // Search for a task by title (admin only) - helps find tasks mentioned in conversation
-export function createSearchTaskByTitleTool(supabase: SupabaseClientType, userId: string) {
+export function createSearchTaskByTitleTool(supabase: SupabaseClientType, _userId: string) {
   return tool(
     async ({ searchTerm }) => {
       const { data: tasks, error } = await supabase

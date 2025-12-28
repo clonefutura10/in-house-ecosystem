@@ -102,7 +102,7 @@ export function createListMyTasksTool(supabase: SupabaseClientType, userId: stri
 }
 
 // Get task details
-export function createGetTaskDetailsTool(supabase: SupabaseClientType, userId: string) {
+export function createGetTaskDetailsTool(supabase: SupabaseClientType, _userId: string) {
   return tool(
     async ({ taskId }) => {
       const { data: task, error } = await supabase
