@@ -13,6 +13,7 @@ import {
     LogOut,
     FileText,
     Bell,
+    Briefcase,
     type LucideIcon,
 } from 'lucide-react'
 
@@ -29,6 +30,7 @@ function getNavItems(isAdmin: boolean): NavItem[] {
         { title: isAdmin ? 'Tasks' : 'My Tasks', href: '/tasks', icon: CheckCircle },
         { title: 'Team', href: '/team', icon: Users, adminOnly: true },
         { title: isAdmin ? 'Performance' : 'My Performance', href: '/performance', icon: BarChart3 },
+        { title: 'ATS Hiring', href: '/ats', icon: Briefcase, adminOnly: true },
         { title: 'Templates', href: '/templates', icon: FileText, adminOnly: true },
         { title: 'Notifications', href: '/notifications', icon: Bell, adminOnly: true },
         { title: 'Settings', href: '/settings', icon: Settings, adminOnly: true },
